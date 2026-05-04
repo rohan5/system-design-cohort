@@ -1,0 +1,1 @@
+Practice exercises for "Relational Databases" class.
