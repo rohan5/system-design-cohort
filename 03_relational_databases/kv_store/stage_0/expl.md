@@ -1,0 +1,1 @@
+- basic KV store setup with support to - "PUT" (inserts or updates)
