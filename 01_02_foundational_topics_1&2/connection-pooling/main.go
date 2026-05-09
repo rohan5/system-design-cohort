@@ -3,6 +3,7 @@ package main
 import (
 	"connection-pooling/db"
 	"database/sql"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -35,11 +36,18 @@ func NewCPool(maxConn int) (*cpool, error) {
 	return pool, nil
 }
 
-// func (p *Pool) Get() (*sql.DB, error) {
-// }
+func (p *cpool) Get() (*conn, error) {
+	conn := p.conn[0]
+	p.conn = p.conn[1:]
+	if conn == nil {
+		return nil, fmt.Errorf("no connection available")
+	}
+	return conn, nil
+}
 
-// func (p *Pool) Put(db *sql.DB) {
-// }
+func (p *cpool) Put(conn *conn) {
+	p.conn = append(p.conn, conn)
+}
 
 func main() {
 	log.Println("HEllo World!!!")
@@ -54,30 +62,43 @@ func main() {
 func benchmarkPool() {
 	startTime := time.Now()
 	// new connection pool
-	_, err := NewCPool(10)
+	cpool, err := NewCPool(10)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// defer pool.Close()
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(100)
-
-	// for i := 0; i < 100; i++ {
-	// 	go func() {
-	// 		defer wg.Done()
-	// 		// conn := Get()
-
-	// 		// _, err := db.Exec("Select SLEEP(0.1);")
-	// 		// if err != nil {
-	// 		// 	// log.Fatal(err)
-	// 		// 	panic(err)
-	// 		// }
-
-	// 		// Put(conn)
-	// 	}()
+	// conn, err := cpool.Get()
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
-	// wg.Wait()
+	// res, err := conn.db.Exec("Select SLEEP(0.1);")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// } else {
+	// 	log.Println("Result: ", res)
+	// }
+	// cpool.Put(conn)
+	goRoutinesCount := 11
+	wg := sync.WaitGroup{}
+	wg.Add(goRoutinesCount)
+
+	for i := 0; i < goRoutinesCount; i++ {
+		go func() {
+			defer wg.Done()
+			conn, err := cpool.Get()
+			if err != nil {
+				log.Fatal(err)
+			}
+			res, err := conn.db.Exec("Select SLEEP(0.1);")
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Println("Result: ", res)
+			}
+			cpool.Put(conn)
+		}()
+	}
+	wg.Wait()
 
 	log.Printf("** Pool time took = %v **", time.Since(startTime))
 }
