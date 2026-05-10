@@ -28,7 +28,7 @@ func New() *sql.DB {
 		log.Fatal("Error in db ping:", err)
 	}
 
-	log.Println("Connected to database successfully!")
+	// log.Println("Connected to database successfully!")
 
 	return db
 }

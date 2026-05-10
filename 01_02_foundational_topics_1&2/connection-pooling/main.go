@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// build connection pooling in golang using database/sql package and mysql driver
-// connection pool should be blocking.
-// we will use golang's channel to implement the connection pool.
 type conn struct {
 	db *sql.DB
 }
@@ -32,53 +29,51 @@ func NewCPool(maxConn int) (*cpool, error) {
 	}
 	for i := 0; i < maxConn; i++ {
 		pool.conn = append(pool.conn, &conn{db.New()})
+		pool.channel <- nil
 	}
 	return pool, nil
 }
 
 func (p *cpool) Get() (*conn, error) {
+	<-p.channel
+	p.mu.Lock()
 	conn := p.conn[0]
 	p.conn = p.conn[1:]
 	if conn == nil {
 		return nil, fmt.Errorf("no connection available")
 	}
+	p.mu.Unlock()
 	return conn, nil
 }
 
 func (p *cpool) Put(conn *conn) {
+	p.mu.Lock()
 	p.conn = append(p.conn, conn)
+	p.mu.Unlock()
+
+	p.channel <- nil
 }
 
 func main() {
 	log.Println("HEllo World!!!")
 
 	// benchmark connection pool
-	benchmarkPool()
+	gotoutinesCount := 500
+	log.Printf("** Benchmarking with %d goroutines **", gotoutinesCount)
 
-	// benchmark non connection pool
-	// benchmarkNonPool()
+	benchmarkPool(gotoutinesCount)
+	// benchmarkNonPool(gotoutinesCount)
 }
 
-func benchmarkPool() {
-	startTime := time.Now()
+func benchmarkPool(goRoutinesCount int) {
 	// new connection pool
 	cpool, err := NewCPool(10)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// conn, err := cpool.Get()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// res, err := conn.db.Exec("Select SLEEP(0.1);")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// } else {
-	// 	log.Println("Result: ", res)
-	// }
-	// cpool.Put(conn)
-	goRoutinesCount := 11
+	startTime := time.Now()
+	// goRoutinesCount := 11
 	wg := sync.WaitGroup{}
 	wg.Add(goRoutinesCount)
 
@@ -89,11 +84,9 @@ func benchmarkPool() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			res, err := conn.db.Exec("Select SLEEP(0.1);")
+			_, err = conn.db.Exec("Select SLEEP(0.1);")
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				log.Println("Result: ", res)
 			}
 			cpool.Put(conn)
 		}()
@@ -103,13 +96,12 @@ func benchmarkPool() {
 	log.Printf("** Pool time took = %v **", time.Since(startTime))
 }
 
-func benchmarkNonPool() {
+func benchmarkNonPool(goRoutinesCount int) {
 
 	startTime := time.Now()
-	count := 200
 	wg := sync.WaitGroup{}
-	wg.Add(count)
-	for i := 0; i < count; i++ {
+	wg.Add(goRoutinesCount)
+	for i := 0; i < goRoutinesCount; i++ {
 		go func() {
 			defer wg.Done()
 			db := db.New()
