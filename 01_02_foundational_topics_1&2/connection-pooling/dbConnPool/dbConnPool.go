@@ -9,7 +9,7 @@ import (
 )
 
 type conn struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 type cpool struct {
@@ -51,4 +51,8 @@ func (p *cpool) Put(conn *conn) {
 	p.mu.Unlock()
 
 	p.channel <- nil
+}
+
+func (c *conn) Exec(query string, args ...any) (sql.Result, error) {
+	return c.db.Exec(query, args...)
 }

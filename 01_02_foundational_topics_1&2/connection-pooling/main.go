@@ -38,7 +38,7 @@ func benchmarkPool(goRoutinesCount int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = conn.DB.Exec("Select SLEEP(0.1);")
+			_, err = conn.Exec("Select SLEEP(0.1);")
 			if err != nil {
 				log.Fatal(err)
 			}
