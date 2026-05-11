@@ -2,57 +2,11 @@ package main
 
 import (
 	"connection-pooling/db"
-	"database/sql"
-	"fmt"
+	"connection-pooling/dbConnPool"
 	"log"
 	"sync"
 	"time"
 )
-
-type conn struct {
-	db *sql.DB
-}
-
-type cpool struct {
-	mu      *sync.Mutex
-	channel chan interface{}
-	conn    []*conn
-	maxConn int
-}
-
-func NewCPool(maxConn int) (*cpool, error) {
-	pool := &cpool{
-		mu:      &sync.Mutex{},
-		conn:    make([]*conn, 0, maxConn),
-		maxConn: maxConn,
-		channel: make(chan interface{}, maxConn),
-	}
-	for i := 0; i < maxConn; i++ {
-		pool.conn = append(pool.conn, &conn{db.New()})
-		pool.channel <- nil
-	}
-	return pool, nil
-}
-
-func (p *cpool) Get() (*conn, error) {
-	<-p.channel
-	p.mu.Lock()
-	conn := p.conn[0]
-	p.conn = p.conn[1:]
-	if conn == nil {
-		return nil, fmt.Errorf("no connection available")
-	}
-	p.mu.Unlock()
-	return conn, nil
-}
-
-func (p *cpool) Put(conn *conn) {
-	p.mu.Lock()
-	p.conn = append(p.conn, conn)
-	p.mu.Unlock()
-
-	p.channel <- nil
-}
 
 func main() {
 	log.Println("HEllo World!!!")
@@ -67,7 +21,7 @@ func main() {
 
 func benchmarkPool(goRoutinesCount int) {
 	// new connection pool
-	cpool, err := NewCPool(10)
+	cpool, err := dbConnPool.NewCPool(10)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,7 +38,7 @@ func benchmarkPool(goRoutinesCount int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = conn.db.Exec("Select SLEEP(0.1);")
+			_, err = conn.DB.Exec("Select SLEEP(0.1);")
 			if err != nil {
 				log.Fatal(err)
 			}
