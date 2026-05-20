@@ -1,0 +1,1 @@
+# RabbitMQ basic-queue example
