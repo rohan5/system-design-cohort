@@ -11,7 +11,7 @@ import (
 func main() {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{"localhost:29092"},
-		GroupID:  "order-processors-new",
+		GroupID:  "order-processors",
 		Topic:    "orders",
 		MinBytes: 1,
 		MaxBytes: 10e6,
@@ -22,7 +22,7 @@ func main() {
 	fmt.Println("Consumer started...")
 
 	for {
-		msg, err := reader.ReadMessage(context.Background())
+		msg, err := reader.FetchMessage(context.Background())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -34,5 +34,7 @@ func main() {
 			msg.Key,
 			msg.Value,
 		)
+
+		reader.CommitMessages(context.Background(), msg)
 	}
 }

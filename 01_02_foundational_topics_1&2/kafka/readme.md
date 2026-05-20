@@ -1,6 +1,15 @@
-#Kafka on local
+# Kafka experiments
 
 Setup Kafka locally to understand semantics and gurantees
+MOST IMPORTANT Concepts
+
+Partition
+Offset
+Consumer group
+Ordering scope
+Replayability
+Rebalancing
+Delivery semantics
 
 ### Kafka fundamentals learnt-
 - Kafka guarantees ordering ONLY inside a partition. NOT globally.
@@ -17,5 +26,3 @@ Setup Kafka locally to understand semantics and gurantees
 - all old messages replay. This is Kafka’s superpower:
     - events persist
     - consumers track offsets independently
-
-- 
