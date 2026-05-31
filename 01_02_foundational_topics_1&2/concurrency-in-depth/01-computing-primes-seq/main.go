@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var PRIMES_TILL = 20
+var PRIMES_TILL = 10000000
 var PRIMES_COUNT = 0
 
 func checkPrimes(input int) {
@@ -26,6 +26,6 @@ func main() {
 	for i := 3; i <= PRIMES_TILL; i++ {
 		checkPrimes(i)
 	}
-	fmt.Printf("Time taken = %d \n", time.Since(startTime))
+	fmt.Printf("Time taken = %f seconds\n", time.Since(startTime).Seconds())
 	fmt.Printf("Till %d, Found  %d Primes\n", PRIMES_TILL, PRIMES_COUNT+1)
 }
