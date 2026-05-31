@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var PRIMES_TILL = 10000000
+var PRIMES_TILL = 100000000
 var PRIMES_COUNT int32 = 0
 var BATCHES = 10
 
@@ -33,7 +33,7 @@ func main() {
 	for i := 0; i < BATCHES-1; i++ {
 		wg.Add(1)
 		go processBatch(i, &wg, nStart, nStart+batchSize)
-		nStart = nStart + batchSize + 1
+		nStart = nStart + batchSize
 	}
 	wg.Add(1)
 	go processBatch(BATCHES-1, &wg, nStart, PRIMES_TILL)
@@ -46,8 +46,8 @@ func main() {
 func processBatch(batch int, wg *sync.WaitGroup, nStart int, nEnd int) {
 	defer wg.Done()
 	startTime := time.Now()
-	for i := nStart; i <= nEnd; i++ {
+	for i := nStart; i < nEnd; i++ {
 		checkPrimes(i)
 	}
-	fmt.Printf("Batch -> %d [%d, %d] Time : %f \n", batch, nStart, nEnd, time.Since(startTime).Seconds())
+	fmt.Printf("Batch -> %d [%d, %d) Time : %f \n", batch, nStart, nEnd, time.Since(startTime).Seconds())
 }
